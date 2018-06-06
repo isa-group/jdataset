@@ -147,11 +147,14 @@ public class PlainTextLoader<X> extends AbstractFileTypeLoader{
     }
 
     @Override
-    public DataSet load(InputStream is, String extension) throws IOException {
-        DataSet result=new SimpleDataSet();        
+    public DataSet load(InputStream is, String extension) throws IOException {        
         StringWriter writer = new StringWriter();
         IOUtils.copy(is,writer);
         String content=writer.toString();
+        return load(content,extension);
+    }
+    public DataSet load(String content, String extension) throws IOException {        
+        DataSet result=new SimpleDataSet();        
         String[] lines=content.split(rowSeparator);        
         if(lines.length==1)
             lines=content.split("\n");
@@ -184,14 +187,26 @@ public class PlainTextLoader<X> extends AbstractFileTypeLoader{
             public X apply(String value) {
                 X result=null;
                 if(Integer.class.equals(imageClass)){
-                    Integer intVal=Integer.parseInt(value);
-                    result=(X)intVal;
+                    if("".equals(value))
+                        result=null;
+                    else{
+                        Integer intVal=Integer.parseInt(value);
+                        result=(X)intVal;
+                    }
                 }else if(Double.class.equals(imageClass)){
-                    Double doubleVal=Double.parseDouble(value);
-                    result=(X)doubleVal;
+                     if("".equals(value))
+                        result=null;
+                    else{
+                        Double doubleVal=Double.parseDouble(value);
+                        result=(X)doubleVal;
+                     }
                 }else if(Boolean.class.equals(imageClass)){
-                    Boolean booleanValue=Boolean.parseBoolean(value);
-                    result=(X)booleanValue;
+                     if("".equals(value))
+                        result=null;
+                    else{
+                        Boolean booleanValue=Boolean.parseBoolean(value);
+                        result=(X)booleanValue;
+                     }
                 }else if(imageClass.isEnum()){
                     try {
                         Method m=(imageClass.getMethod("", String.class));
@@ -217,24 +232,34 @@ public class PlainTextLoader<X> extends AbstractFileTypeLoader{
 
     private void generateTypeConversors() {
         Function<String,Integer> integerConversor=new Function<String,Integer>() {
-            @Override public Integer apply(String f) {
-                return Integer.valueOf(f);
+            @Override public Integer apply(String value) {
+                if("".equals(value))
+                        return null;
+                else
+                    return Integer.valueOf(value);
             }
         };
         perTypeConversors.put(Integer.class, integerConversor);
         Function<String,Double> doubleConversor=new Function<String,Double>() {
-            @Override  public Double apply(String f) {
+            @Override  public Double apply(String value) {
                 Double result=null;
-                result=Doubles.tryParse(f);
-                if(result==null)
-                    result=Double.parseDouble(f.replace(",", "."));
+                if("".equals(value))
+                        return result;
+                else{
+                    result=Doubles.tryParse(value);
+                    if(result==null)
+                        result=Double.parseDouble(value.replace(",", "."));
+                }
                 return result;
             }
         };
         perTypeConversors.put(Double.class, doubleConversor);
         Function<String,Boolean> booleanConversor=new Function<String, Boolean>() {
-            @Override public Boolean apply(String f) {
-                return Boolean.valueOf(f);
+            @Override public Boolean apply(String value) {
+                if("".equals(value))
+                        return null;
+                else
+                    return Boolean.valueOf(value);
             }
         };
         perTypeConversors.put(Boolean.class, booleanConversor);
